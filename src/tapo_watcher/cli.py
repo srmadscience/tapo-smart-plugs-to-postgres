@@ -8,10 +8,12 @@ is the store-and-forward contract:
 3. ALWAYS write this run's messages to the outbox (``buffer/``) first.
 4. If Kafka + Schema Registry are up, drain every pending file oldest-first
    (gzipping each on success). If not, exit 0 -- the next run catches up.
-5. Prune sent archives older than the retention period.
+5. Restart any FAILED tapo Connect sink (``sinks.heal``).
+6. Prune sent archives older than the retention period.
 
-PostgreSQL outages are absorbed downstream: Kafka retains the messages and
-the Connect JDBC sinks retry until the database is back.
+PostgreSQL outages are absorbed downstream: Kafka retains the messages; the
+JDBC sinks retry briefly and then fail, and step 5 restarts them on every run
+until the database is back.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ from .outbox import Outbox, drain, prune, write_run
 from .plugs import load_plugs
 from .poll import poll_all
 from .records import build_rows, merge_rows
+from .sinks import heal
 from .state import PollState
 
 
@@ -97,6 +100,8 @@ def main(argv: list[str] | None = None) -> int:
         _log(f"error: collection failed: {type(exc).__name__}: {exc}")
         rc = 1
     ship(cfg, outbox)
+    if cfg.connect_url:
+        heal(cfg.connect_url, log=_log)
     pruned = prune(outbox, cfg.buffer_retention_days)
     if pruned:
         _log(f"Pruned {pruned} archive(s) older than "

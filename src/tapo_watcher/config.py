@@ -37,6 +37,10 @@ class Config:
     kafka_topic_prefix: str = "tapo."
     kafka_client_id: str = "tapo-watcher"
     kafka_probe_timeout: float = 5.0
+    # Kafka Connect REST API. Each run restarts any FAILED tapo sink (see
+    # sinks.py) -- the JDBC sink dies on a PostgreSQL outage > ~2.5 min and
+    # never recovers on its own. Empty disables the check.
+    connect_url: str = "http://badger:8083"
 
     # Every run's messages are written to buffer_dir FIRST (one file per topic,
     # "<topic>.<yyyymmdd_HHMMSS>"), then drained to Kafka if it is up. Sent files
@@ -64,6 +68,7 @@ class Config:
             schema_registry_url=env.get("SCHEMA_REGISTRY_URL", d.schema_registry_url),
             kafka_topic_prefix=env.get("KAFKA_TOPIC_PREFIX", d.kafka_topic_prefix),
             kafka_client_id=env.get("KAFKA_CLIENT_ID", d.kafka_client_id),
+            connect_url=env.get("CONNECT_URL", d.connect_url),
             kafka_probe_timeout=float(
                 env.get("TAPO_KAFKA_PROBE_TIMEOUT", d.kafka_probe_timeout)),
             buffer_dir=env.get("TAPO_BUFFER_DIR", d.buffer_dir),

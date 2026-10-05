@@ -24,6 +24,8 @@
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "key.converter.schemas.enable": "false",
     "table.name.format": "tapo.power_5min",
-    "schema.pattern": "tapo"
+    "schema.pattern": "tapo",
+    "connection.attempts": "5",
+    "connection.backoff.ms": "30000"
   }
 }

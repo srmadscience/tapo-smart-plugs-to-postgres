@@ -60,10 +60,19 @@ class KafkaSink:
     """Confluent producer + per-topic Avro serializers."""
 
     def __init__(self, cfg):
+        import warnings
+
         from confluent_kafka import Producer
-        from confluent_kafka.schema_registry import SchemaRegistryClient
-        from confluent_kafka.schema_registry.avro import AvroSerializer
         from confluent_kafka.serialization import StringSerializer
+
+        # The registry client imports authlib, which emits an
+        # AuthlibDeprecationWarning about httpx on every run -- noise in the
+        # journal every 15 minutes, nothing we can act on. record=True is
+        # needed: authlib installs its own "always" filter while importing,
+        # which beats a simplefilter("ignore") set here.
+        with warnings.catch_warnings(record=True):
+            from confluent_kafka.schema_registry import SchemaRegistryClient
+            from confluent_kafka.schema_registry.avro import AvroSerializer
 
         self._cfg = cfg
         self._producer = Producer({

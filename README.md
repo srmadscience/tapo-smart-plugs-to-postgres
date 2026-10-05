@@ -37,10 +37,15 @@ all timestamps UTC.
 | outage | what happens |
 |---|---|
 | Kafka / registry | runs keep writing `buffer/`; the first run that sees Kafka up drains the backlog (≤120 s per run, rest next run) |
-| PostgreSQL (data) | Kafka retains the messages; sinks retry every 60 s (`max.retries` 100000 ≈ 69 days). Survives as long as topic retention (default 7 days) |
+| PostgreSQL (data) | Kafka retains the messages. The JDBC sink can't wait out an outage itself: after `connection.attempts` (5 × 30 s) its task goes FAILED. So **every watcher run restarts any FAILED tapo sink** (`sinks.py`, via `CONNECT_URL`), and data flows again within 15 min of PostgreSQL returning. Survives as long as topic retention (default 7 days) |
 | PostgreSQL (plug list) | cached `state/plugs.json` is used |
 | the watcher host | the plugs keep history: hourly energy for 8 days, 5-minute power for 12 hours; each run fetches back to its last success, deterministic ids make re-sends upserts |
 | one plug | a `reading` row with `status='error'`; others unaffected |
+
+Verified by outage drills on 2026-10-05: Kafka unreachable for 2 runs, sink DB
+connection refused, PostgreSQL down for the plug list plus one unreachable
+plug, 2 h of deleted rows refilled from plug history, and a paused sink. All
+caught up with no gaps or duplicates.
 
 ## Setup
 
@@ -76,6 +81,10 @@ Other commands: `tapo-drain` (just flush the outbox), `pytest`,
 - **Third-Party Compatibility** must be on in the Tapo app
   (Me → Third-Party Services) or logins are refused.
 - P110M firmware uses **TPAP** login; that needs `tapo >= 0.11`.
+- **The JDBC sink (10.8.4) fails its task on a lost DB connection** and never
+  recovers on its own; `max.retries` only covers errors on an open connection.
+  The watcher's per-run restart covers this, but only while the watcher runs.
+  It leaves PAUSED sinks alone. Set `CONNECT_URL=` (empty) to disable it.
 - The sinks' `errors.tolerance=all` silently drops records PostgreSQL rejects.
   Check `connect/status-sinks.sh` and the Connect logs if rows go missing.
 - `sql/tapo_schema_postgres.sql` is generated:

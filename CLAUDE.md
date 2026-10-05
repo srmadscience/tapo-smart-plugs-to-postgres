@@ -31,7 +31,12 @@ python -m tapo_watcher.schema > sql/tapo_schema_postgres.sql   # after schema.py
 - `outbox.py` — copied from velop-watcher; `write_run` + `prune` added. Every
   run writes first, then drains (velop only buffered when Kafka was down).
 - `kafka_sink.py` — copied from velop-watcher; key = MAC (or plug_name).
-- `cli.py` — collect → write → ship → prune. Collection failures still drain.
+- `sinks.py` — restarts FAILED `postgres-jdbc-sink-tapo-*` connectors via
+  the Connect REST API each run. The JDBC sink dies permanently once
+  `connection.attempts` is exhausted (found in the outage drill). Names must
+  match `connect/*.json` (tested).
+- `cli.py` — collect → write → ship → heal sinks → prune. Collection failures
+  still drain.
 - `discover.py` — discovery (no login) and `--dump` fixture capture.
 
 `connect/` (4 JDBC sinks + install/status/restart scripts) and `systemd/` are
