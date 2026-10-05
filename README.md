@@ -70,6 +70,41 @@ sudo ./systemd/install-service.sh   # on the Pi: venv + 15-min timer
 Other commands: `tapo-drain` (just flush the outbox), `pytest`,
 `./connect/restart-sinks.sh [--all]`.
 
+## Deploying to the Pi
+
+The watcher runs on `pi@longstreet`, in `~/tapo-smart-plugs-to-postgres`. The
+code goes there as a **git bundle over SSH, not through GitHub**: the Pi's clone
+has `origin` pointing at the file `~/tapo.bundle` and tracks its `main`.
+
+**Update** (from this repo, on `main`):
+
+```bash
+git bundle create /tmp/tapo.bundle main
+scp /tmp/tapo.bundle pi@longstreet:tapo.bundle
+ssh pi@longstreet 'cd ~/tapo-smart-plugs-to-postgres && git pull && sudo ./systemd/install-service.sh'
+```
+
+The installer is idempotent. It reinstalls the package, re-renders the
+systemd units and leaves the secrets file alone. Skip it when only docs or
+`grafana/` changed.
+
+**First install** on a fresh Pi. Write the secrets file *before* running the
+installer, which enables the timer immediately. If the file still held the
+template's placeholder login, the first run would try a bad password against
+every plug, and plugs lock after repeated failed logins.
+
+```bash
+git bundle create /tmp/tapo.bundle main && scp /tmp/tapo.bundle pi@longstreet:tapo.bundle
+ssh pi@longstreet 'git clone -b main ~/tapo.bundle ~/tapo-smart-plugs-to-postgres'
+# /etc/tapo-watcher/tapo-watcher.env (root, chmod 600): TAPO_USERNAME,
+# TAPO_PASSWORD, TAPO_PG_DSN -- see systemd/tapo-watcher.env.example
+ssh pi@longstreet 'cd ~/tapo-smart-plugs-to-postgres && sudo ./systemd/install-service.sh'
+```
+
+Check it with `ssh pi@longstreet journalctl -u tapo-watcher -f`. The Pi keeps its
+own `state/` (last success per plug, cached plug list) and `buffer/` (outbox);
+both are gitignored.
+
 ## Dashboard
 
 Import [`grafana/tapo.json`](grafana/tapo.json) (Dashboards → New → Import) and
