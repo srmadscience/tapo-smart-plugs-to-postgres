@@ -1,0 +1,33 @@
+[project]
+name = "tapo-smart-plugs-to-postgres"
+version = "0.1.0"
+description = "Poll Tapo P110/P110M smart plugs and ship their usage to PostgreSQL via a file outbox, Kafka and Kafka Connect"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Local (TPAP/KLAP) plug API. 0.11+ is needed for TPAP-only P110M firmware.
+    "tapo>=0.11.1",
+    # Plug list lives in PostgreSQL (tapo.plug); cached locally for PG outages.
+    "psycopg[binary]>=3.1",
+    "requests>=2.31",
+    # Avro/Kafka producer path -- the only data sink.
+    "confluent-kafka[schemaregistry,avro]",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+tapo-watcher = "tapo_watcher.cli:main"
+tapo-drain = "tapo_watcher.outbox:drain_main"
+tapo-discover = "tapo_watcher.discover:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

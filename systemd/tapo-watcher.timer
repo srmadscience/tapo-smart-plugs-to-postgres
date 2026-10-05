@@ -1,0 +1,16 @@
+# Template — install with systemd/install-service.sh, which fills @PLACEHOLDERS@.
+#
+# Fires on the wall clock (default every 15 minutes at :00/:15/:30/:45) so
+# readings line up across plugs and days. Persistent=true runs one missed tick
+# after downtime; the plugs' own history fills the gap itself.
+[Unit]
+Description=Run tapo-watcher every 15 minutes
+
+[Timer]
+OnCalendar=@ONCALENDAR@
+AccuracySec=10s
+Persistent=true
+Unit=tapo-watcher.service
+
+[Install]
+WantedBy=timers.target
