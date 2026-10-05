@@ -70,6 +70,25 @@ sudo ./systemd/install-service.sh   # on the Pi: venv + 15-min timer
 Other commands: `tapo-drain` (just flush the outbox), `pytest`,
 `./connect/restart-sinks.sh [--all]`.
 
+## Dashboard
+
+Import [`grafana/tapo.json`](grafana/tapo.json) (Dashboards → New → Import) and
+pick the PostgreSQL data source that holds `endowment_db`. It has a **Plug**
+picker and three rows:
+
+- **Now**: power per plug, energy today, energy in the selected range, and
+  minutes since each plug's last good reading (orange after 20, red after 35)
+- **Power and energy**: 5-minute power, hourly energy (stacked), and daily
+  energy by Europe/Dublin calendar day
+- **Health**: latest status per plug (status, RSSI, firmware, last error),
+  Wi-Fi signal over time with the unreliable zone below −80 dBm shaded, and
+  failed polls per hour
+
+The JSON is generated. Edit `grafana/queries.py` / `grafana/build_dashboard.py`,
+then `.venv/bin/python grafana/build_dashboard.py > grafana/tapo.json`. Every
+computed column is cast to `float8`, because Grafana silently drops `NUMERIC`
+columns.
+
 ## Gotchas
 
 - **Plugs lock themselves after repeated failed logins**, and retrying keeps
