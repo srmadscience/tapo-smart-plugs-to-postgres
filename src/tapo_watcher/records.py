@@ -134,17 +134,20 @@ def reading_row(result: dict, fetched_at: datetime) -> dict:
 
 def _history_rows(result: dict, section: str, value_key: str, out_key: str,
                   fetched_at: datetime, mac: str | None) -> list[dict]:
-    """Rows for one history section. Entries with no data (None) are skipped so
-    an empty slot never overwrites a value an earlier run already landed."""
+    """Rows for one history section. Skipped: entries with no data (None), so an
+    empty slot never overwrites a value an earlier run already landed; and
+    entries starting after ``fetched_at`` -- the plug pads hourly energy out to
+    the end of its local day with 0s (seen on a P110M, fw 1.4.3), which are not
+    real readings. The in-progress slot is kept; later runs overwrite it."""
     data = result.get(section)
     if not data or not mac:
         return []
     rows = []
     for entry in data.get("entries") or []:
         value = entry.get(value_key)
-        if value is None:
-            continue
         start = utc(entry.get("start_date_time"))
+        if value is None or start > fetched_at:
+            continue
         rows.append({
             "id": f"{mac}|{iso(start)}",
             "fetched_at": fetched_at,

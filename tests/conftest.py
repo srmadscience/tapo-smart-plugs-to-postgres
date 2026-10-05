@@ -1,6 +1,10 @@
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
+
+FIXTURES = Path(__file__).parent / "fixtures"
 
 FETCHED_AT = datetime(2026, 10, 5, 14, 15, 0, tzinfo=timezone.utc)
 
@@ -9,8 +13,9 @@ FETCHED_AT = datetime(2026, 10, 5, 14, 15, 0, tzinfo=timezone.utc)
 def ok_result():
     """A successful poll result shaped like the tapo responses' to_dict().
 
-    SYNTHETIC -- built from the tapo 0.11.1 type stubs, not captured from a
-    plug. Replace with real `tapo-discover --dump` output once available.
+    SYNTHETIC (non-zero values, None slots, datetime objects) so the unit tests
+    can assert exact numbers; its shape is checked against the real capture in
+    ``real_result``.
     """
     return {
         "plug_name": "kettle",
@@ -71,3 +76,17 @@ def ok_result():
             ],
         },
     }
+
+
+# Captured from a P110M(UK), fw 1.4.3, tapo 0.11.1 at 2026-10-05 13:45:04Z via
+# `tapo-discover --dump`, with identifiers replaced (tests/fixtures/p110m/).
+REAL_FETCHED_AT = datetime(2026, 10, 5, 13, 45, 0, tzinfo=timezone.utc)
+
+
+@pytest.fixture
+def real_result():
+    result = {"plug_name": "real", "ip": "192.0.2.10", "status": "ok",
+              "error": None, "history_ok": True}
+    for f in (FIXTURES / "p110m").glob("*.json"):
+        result[f.stem] = json.loads(f.read_text())
+    return result

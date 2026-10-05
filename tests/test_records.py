@@ -71,3 +71,36 @@ def test_merge_rows(ok_result):
                                     FETCHED_AT)])
     assert len(merged["reading"]) == 2
     assert len(merged["device"]) == 1
+
+
+# --- real P110M capture -------------------------------------------------------
+
+from conftest import REAL_FETCHED_AT  # noqa: E402
+
+
+def test_synthetic_fixture_has_the_real_shape(ok_result, real_result):
+    for section in ("device_info", "energy_usage", "device_usage"):
+        assert set(ok_result[section]) <= set(real_result[section]), section
+
+
+def test_real_capture_rows(real_result):
+    rows = build_rows(real_result, REAL_FETCHED_AT)
+    (device,) = rows["device"]
+    assert device["id"] == "AA:BB:CC:00:11:22"
+    assert device["model"] == "P110M"
+    assert device["fw_ver"].startswith("1.4.3")
+    assert device["overheat_status"] is None          # null on this firmware
+    assert device["overcurrent_status"] == "normal"
+    (reading,) = rows["reading"]
+    assert reading["month_energy_wh"] == 82
+    assert reading["time_usage_past30_min"] == 702
+
+
+def test_real_hourly_drops_future_zero_padding(real_result):
+    # The plug returns 192 hourly slots (8 local days) padded with 0s out to
+    # 22:00Z, the end of its local day; slots after fetched_at are not readings.
+    assert len(real_result["energy_hourly"]["entries"]) == 192
+    hourly = build_rows(real_result, REAL_FETCHED_AT)["energy_hourly"]
+    assert max(r["interval_start"] for r in hourly) == REAL_FETCHED_AT.replace(minute=0)
+    assert len(hourly) == 192 - 9                     # 14Z..22Z dropped
+    assert len(build_rows(real_result, REAL_FETCHED_AT)["power_5min"]) == 144

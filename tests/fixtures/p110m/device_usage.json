@@ -1,0 +1,17 @@
+{
+  "power_usage": {
+    "past30": 82,
+    "past7": 82,
+    "today": 0
+  },
+  "saved_power": {
+    "past30": 620,
+    "past7": 620,
+    "today": 0
+  },
+  "time_usage": {
+    "past30": 702,
+    "past7": 702,
+    "today": 0
+  }
+}

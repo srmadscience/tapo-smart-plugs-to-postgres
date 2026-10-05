@@ -1,0 +1,13 @@
+{
+  "current_power": 0,
+  "electricity_charge": [
+    0,
+    0,
+    0
+  ],
+  "local_time": "2026-10-05T14:45:04",
+  "month_energy": 82,
+  "month_runtime": 702,
+  "today_energy": 0,
+  "today_runtime": 0
+}

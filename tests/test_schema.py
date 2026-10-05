@@ -48,3 +48,12 @@ def test_failed_poll_is_keyed_by_plug_name():
     rows = build_rows({"plug_name": "kettle", "ip": "x", "status": "error"}, FETCHED_AT)
     (key, _value), = messages_for(rows, "tapo.")["tapo.reading"]
     assert key == "kettle"
+
+
+def test_real_capture_serializes(real_result):
+    from conftest import REAL_FETCHED_AT
+
+    for topic, msgs in messages_for(build_rows(real_result, REAL_FETCHED_AT), "tapo.").items():
+        schema = fastavro.parse_schema(json.loads(value_schema(TABLES_BY_NAME[topic[5:]])))
+        for _key, value in msgs:
+            fastavro.schemaless_writer(io.BytesIO(), schema, value)
