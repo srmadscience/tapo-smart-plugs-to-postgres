@@ -221,3 +221,6 @@ __marimo__/
 spike_output/
 buffer/
 state/
+
+# IDE
+.idea/

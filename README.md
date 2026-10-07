@@ -145,3 +145,20 @@ columns.
   `python -m tapo_watcher.schema > sql/tapo_schema_postgres.sql`
   (a test fails if it's stale). After changing a column, keep the Avro change
   BACKWARD-compatible (add nullable fields only) or the registry rejects it.
+
+## Troubleshooting
+
+- **Every plug fails with `HASH_MISMATCH`.** Login hashes the email and
+  password case-sensitively, so `TAPO_USERNAME` must match the account email
+  exactly, including case. Check this before touching the plugs.
+- **The Tapo app takes the new password but the plugs don't.** After the
+  account password changes, the plugs can keep accepting only the old one for
+  local login, even after a factory reset and re-add (Tapo Simple Setup can
+  copy credentials from the other plugs). Keep the old password in the env
+  file, or reset and re-add each plug with the others unplugged. Test with
+  one `tapo-discover <ip> --dump DIR` login, never several in a row.
+- **A plug logs in but fails with `-1003 JSON_DECODE_FAIL` / `-1601`** on
+  `get_energy_usage`, `get_device_usage` and the energy history (seen on a
+  P110M after a factory reset). Energy usage is a core read, so the whole poll
+  fails. Opening the plug's Energy Usage page in the Tapo app fixed it.
+  Hourly energy backfills; 5-minute power from before the reset is lost.
