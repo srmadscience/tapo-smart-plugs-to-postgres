@@ -134,7 +134,8 @@ columns.
   retry sooner.
 - **Third-Party Compatibility** must be on in the Tapo app
   (Me → Third-Party Services) or logins are refused.
-- P110M firmware uses **TPAP** login; that needs `tapo >= 0.11`.
+- Some P110M firmware uses **TPAP** login, which needs `tapo >= 0.11`. Ours
+  (fw 1.4.3) uses KLAP, like the P110s; `tapo-discover <ip>` shows which.
 - **The JDBC sink (10.8.4) fails its task on a lost DB connection** and never
   recovers on its own; `max.retries` only covers errors on an open connection.
   The watcher's per-run restart covers this, but only while the watcher runs.
