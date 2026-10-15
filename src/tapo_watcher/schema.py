@@ -101,8 +101,11 @@ CREATE TABLE IF NOT EXISTS {SCHEMA}.plug (
     ip         TEXT NOT NULL UNIQUE,
     enabled    BOOLEAN NOT NULL DEFAULT TRUE,
     notes      TEXT,
+    plug_location TEXT,
     added_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Columns added after the first release (CREATE above won't add them).
+ALTER TABLE {SCHEMA}.plug ADD COLUMN IF NOT EXISTS plug_location TEXT;
 """
 
 

@@ -15,8 +15,11 @@ CREATE TABLE IF NOT EXISTS tapo.plug (
     ip         TEXT NOT NULL UNIQUE,
     enabled    BOOLEAN NOT NULL DEFAULT TRUE,
     notes      TEXT,
+    plug_location TEXT,
     added_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Columns added after the first release (CREATE above won't add them).
+ALTER TABLE tapo.plug ADD COLUMN IF NOT EXISTS plug_location TEXT;
 
 -- Latest identity/state per plug. id = MAC, so one row per plug (upserted every run); fetched_at is when it was last seen.
 CREATE TABLE IF NOT EXISTS tapo.device (
