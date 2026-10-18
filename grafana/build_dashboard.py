@@ -49,6 +49,20 @@ LEGEND = {"legend": {"displayMode": "table", "placement": "right",
           "tooltip": {"mode": "multi", "sort": "desc"}}
 PER_ROW = {"reduceOptions": {"values": True, "calcs": [], "fields": ""}}
 
+# Fixed series colours: Grafana's auto palette repeats hues (dryer and
+# dishwasher both came out yellow). House series are dark, plugs light so they
+# stand apart in the house stack. A new plug falls back to the auto palette
+# until it's added here.
+HOUSE_COLOURS = {"Bottom": "#37872D", "Top": "#1F60C4", "Tesla": "#C4162A",
+                 "Dishwasher": "#8F3BB8"}
+PLUG_COLOURS = {"air fryer": "#FF9830", "dehumidifier": "#8AB8FF", "dryer": "#FADE2A",
+                "Outdoor Lights": "#96D98D", "washing machine": "#FFA6B0"}
+
+def colours(m):
+    return [{"matcher": {"id": "byName", "options": name},
+             "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": c}}]}
+            for name, c in m.items()]
+
 panels = [
     row("Now", 0),
     panel("bargauge", "Power now", Q["current_power"], "table", (0, 1, 12, 8),
@@ -98,7 +112,7 @@ panels = [
                   "filters. ESB data lags a day or two; days missing Tesla or dishwasher rows are dropped.",
              unit="kwatth", custom=ts_custom("bars", stack=True),
              options={**LEGEND, "legend": {**LEGEND["legend"], "calcs": ["sum", "mean"]}},
-             defaults={"min": 0}),
+             defaults={"min": 0}, overrides=colours(HOUSE_COLOURS)),
      "timeFrom": "30d"},  # daily bars are useless over the dashboard's default 24h
     row("Health", 38),
     panel("table", "Plug status", Q["status_table"], "table", (0, 39, 24, 7),
@@ -139,6 +153,9 @@ panels = [
           options={**LEGEND, "legend": {**LEGEND["legend"], "calcs": ["sum"]}},
           defaults={"min": 0, "decimals": 0}),
 ]
+for p in panels:
+    if p["type"] == "timeseries":  # series named by plug_name
+        p["fieldConfig"]["overrides"] += colours(PLUG_COLOURS)
 
 dash = {
     "__inputs": [{"name": "DS_TAPO_POSTGRES", "label": "PostgreSQL (endowment_db)",

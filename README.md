@@ -108,16 +108,27 @@ both are gitignored.
 ## Dashboard
 
 Import [`grafana/tapo.json`](grafana/tapo.json) (Dashboards → New → Import) and
-pick the PostgreSQL data source that holds `endowment_db`. It has a **Plug**
-picker and three rows:
+pick the PostgreSQL data source that holds `endowment_db`. It has
+**Location** and **Plug** pickers (Location narrows the plug list; plugs with
+no `plug_location` show as `unset`) and four rows:
 
 - **Now**: power per plug, energy today, energy in the selected range, and
   minutes since each plug's last good reading (orange after 20, red after 35)
 - **Power and energy**: 5-minute power, hourly energy (stacked), and daily
   energy by Europe/Dublin calendar day
+- **Whole house**: daily ESB meter reads for the last 30 days, stacked so each
+  bar is the whole house. The Tesla charger, dishwasher and each plug are
+  broken out. Each plug is subtracted from the meter its `plug_location` names
+  (`BOTTOM` or `TOP`), and plugs with no location aren't subtracted. This row
+  ignores the pickers and only shows days that have Tesla and dishwasher data
+  (ESB data arrives a day or two late).
 - **Health**: latest status per plug (status, RSSI, firmware, last error),
   Wi-Fi signal over time with the unreliable zone below −80 dBm shaded, and
   failed polls per hour
+
+Series colours are fixed in `build_dashboard.py` (`HOUSE_COLOURS`,
+`PLUG_COLOURS`). Add a new plug there, or it gets an automatic colour that may
+clash with another series.
 
 The JSON is generated. Edit `grafana/queries.py` / `grafana/build_dashboard.py`,
 then `.venv/bin/python grafana/build_dashboard.py > grafana/tapo.json`. Every
