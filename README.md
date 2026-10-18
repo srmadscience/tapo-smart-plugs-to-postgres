@@ -58,7 +58,9 @@ tapo-discover 10.13.1.255                       # find plugs (no login needed)
 tapo-discover 10.13.1.230 --dump spike_output   # log in once, dump every API call
 
 psql "$TAPO_PG_DSN" -f sql/tapo_schema_postgres.sql
-psql "$TAPO_PG_DSN" -c "INSERT INTO tapo.plug (plug_name, ip) VALUES ('kettle', '10.13.1.230')"
+# plug_location: BOTTOM or TOP (uppercase) -- which ESB meter the plug is on.
+# Leaving it NULL double-counts the plug in the dashboard's whole-house row.
+psql "$TAPO_PG_DSN" -c "INSERT INTO tapo.plug (plug_name, ip, plug_location) VALUES ('kettle', '10.13.1.230', 'TOP')"
 
 tapo-watcher                    # one run; registers the Avro schemas
 ./connect/install-sinks.sh      # needs PG_USER / PG_PASSWORD, curl, jq
