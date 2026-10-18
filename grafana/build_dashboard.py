@@ -7,7 +7,7 @@ Grafana silently drops NUMERIC columns (see linksys-velop-watcher).
 Verified rendering against Grafana 13.2.3 on 2026-10-05.
 """
 import json, sys
-from queries import Q
+from queries import Q, VAR_LOCATION, VAR_PLUG
 
 DS = {"type": "grafana-postgresql-datasource", "uid": "${DS_TAPO_POSTGRES}"}
 _id = 0
@@ -91,8 +91,17 @@ panels = [
           custom=ts_custom("bars", stack=True),
           options={**LEGEND, "legend": {**LEGEND["legend"], "calcs": ["sum"]}},
           defaults={"min": 0}),
-    row("Health", 28),
-    panel("table", "Plug status", Q["status_table"], "table", (0, 29, 24, 7),
+    row("Whole house", 28),
+    {**panel("timeseries", "House energy per day", Q["house_daily"], "time_series", (0, 29, 24, 9),
+             desc="ESB daily meter reads, stacked so the bar is the whole house. Bottom and Top are what's left "
+                  "after the Tesla, dishwasher and each plug (by plug location) are taken off their meter. Ignores the plug/location "
+                  "filters. ESB data lags a day or two; days missing Tesla or dishwasher rows are dropped.",
+             unit="kwatth", custom=ts_custom("bars", stack=True),
+             options={**LEGEND, "legend": {**LEGEND["legend"], "calcs": ["sum", "mean"]}},
+             defaults={"min": 0}),
+     "timeFrom": "30d"},  # daily bars are useless over the dashboard's default 24h
+    row("Health", 38),
+    panel("table", "Plug status", Q["status_table"], "table", (0, 39, 24, 7),
           desc="Latest poll per plug. RSSI: below -80 dBm is unreliable (the washing machine plug dropped out at -98).",
           options={"showHeader": True, "cellHeight": "sm"},
           defaults={"custom": {"align": "auto", "cellOptions": {"type": "auto"}}},
@@ -115,7 +124,7 @@ panels = [
               {"matcher": {"id": "byName", "options": "Last error"},
                "properties": [{"id": "custom.width", "value": 400}]},
           ]),
-    panel("timeseries", "Wi-Fi signal (RSSI)", Q["rssi_ts"], "time_series", (0, 36, 12, 8),
+    panel("timeseries", "Wi-Fi signal (RSSI)", Q["rssi_ts"], "time_series", (0, 46, 12, 8),
           desc="Below -80 dBm (red zone) a plug is likely to drop off Wi-Fi.", unit="suffix: dBm",
           # Plugs share poll timestamps only approximately; bridge gaps up to
           # 30 min (one missed poll) so lines don't fragment, but show outages.
@@ -124,7 +133,7 @@ panels = [
           options=LEGEND,
           defaults={"max": -30, "min": -100,
                     "thresholds": thresholds((None, "red"), (-80, "transparent"))}),
-    panel("timeseries", "Failed polls per hour", Q["failures_ts"], "time_series", (12, 36, 12, 8),
+    panel("timeseries", "Failed polls per hour", Q["failures_ts"], "time_series", (12, 46, 12, 8),
           desc="Readings with status error or auth_backoff. 4 per hour means the plug was unreachable all hour.",
           custom=ts_custom("bars", stack=True),
           options={**LEGEND, "legend": {**LEGEND["legend"], "calcs": ["sum"]}},
@@ -142,12 +151,15 @@ dash = {
     "timezone": "browser", "editable": True, "graphTooltip": 1,
     "time": {"from": "now-24h", "to": "now"}, "refresh": "5m",
     "schemaVersion": 39, "version": 1,
-    "templating": {"list": [{
-        "name": "plug", "label": "Plug", "type": "query", "datasource": DS,
-        "query": "SELECT plug_name FROM tapo.plug WHERE enabled ORDER BY 1",
-        "definition": "SELECT plug_name FROM tapo.plug WHERE enabled ORDER BY 1",
-        "refresh": 1, "multi": True, "includeAll": True, "sort": 0,
-        "current": {"selected": True, "text": ["All"], "value": ["$__all"]}}]},
+    "templating": {"list": [
+        {"name": "location", "label": "Location", "type": "query", "datasource": DS,
+         "query": VAR_LOCATION, "definition": VAR_LOCATION,
+         "refresh": 1, "multi": True, "includeAll": True, "sort": 0,
+         "current": {"selected": True, "text": ["All"], "value": ["$__all"]}},
+        {"name": "plug", "label": "Plug", "type": "query", "datasource": DS,
+         "query": VAR_PLUG, "definition": VAR_PLUG,
+         "refresh": 1, "multi": True, "includeAll": True, "sort": 0,
+         "current": {"selected": True, "text": ["All"], "value": ["$__all"]}}]},
     "annotations": {"list": []},
     "panels": panels,
 }
