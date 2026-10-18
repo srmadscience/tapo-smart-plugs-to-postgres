@@ -56,7 +56,9 @@ PER_ROW = {"reduceOptions": {"values": True, "calcs": [], "fields": ""}}
 HOUSE_COLOURS = {"Bottom": "#37872D", "Top": "#1F60C4", "Tesla": "#C4162A",
                  "Dishwasher": "#8F3BB8"}
 PLUG_COLOURS = {"air fryer": "#FF9830", "dehumidifier": "#8AB8FF", "dryer": "#FADE2A",
-                "Outdoor Lights": "#96D98D", "washing machine": "#FFA6B0"}
+                "Outdoor Lights": "#96D98D", "washing machine": "#FFA6B0",
+                "toptv": "#5CC8C8", "daddesk": "#A0A0A0", "dadheat": "#A16D46",
+                "alexdesk": "#DEB6F2"}
 
 def colours(m):
     return [{"matcher": {"id": "byName", "options": name},
