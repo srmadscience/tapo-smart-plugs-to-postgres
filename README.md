@@ -4,17 +4,54 @@ Polls Tapo P110 / P110M smart plugs every 15 minutes and lands their power,
 energy and device state in PostgreSQL — via a local file outbox, Kafka and
 Kafka Connect, so that an outage of Kafka or PostgreSQL loses nothing.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    plugs["Tapo P110 / P110M plugs<br/>(LAN, KLAP / TPAP)"]
+
+    subgraph pi["Raspberry Pi"]
+        timer["systemd timer<br/>:00 :15 :30 :45"]
+        watcher["tapo-watcher<br/>(oneshot)"]
+        state[("state/<br/>last success per plug,<br/>cached plug list")]
+        buffer[("buffer/<br/>file outbox,<br/>JSON Lines")]
+        timer --> watcher
+        watcher <--> state
+        watcher -- "3. write every run" --> buffer
+    end
+
+    subgraph kafka["Kafka"]
+        registry["Schema Registry<br/>(Avro)"]
+        topics["4 topics<br/>tapo.device · tapo.reading<br/>tapo.energy_hourly · tapo.power_5min"]
+    end
+
+    connect["Kafka Connect<br/>4 JDBC sinks<br/>(upsert on id)"]
+    pg[("PostgreSQL<br/>schema tapo")]
+    grafana["Grafana<br/>dashboard"]
+
+    pg -- "1. plug list (tapo.plug)" --> watcher
+    watcher -- "2. poll concurrently,<br/>backfill from plug history" --> plugs
+    buffer -- "4. drain oldest-first<br/>when Kafka is up" --> topics
+    watcher -. "register schemas" .-> registry
+    watcher -. "5. restart FAILED sinks<br/>(Connect REST)" .-> connect
+    topics --> connect --> pg --> grafana
 ```
-systemd timer (:00/:15/:30/:45)
-  → tapo-watcher (oneshot)
-      1. plug list   ← PostgreSQL tapo.plug   (PG down → state/plugs.json cache)
-      2. poll every plug concurrently over the LAN (tapo library, TPAP/KLAP)
-      3. ALWAYS write the run to buffer/<topic>.<utc-ts>   (JSON Lines)
-      4. Kafka + registry up?  → drain every pending file oldest-first, gzip on success
-                         down? → exit 0; the next run catches up
-  → Kafka badger:9092 (Confluent Avro, registry badger:8081), one topic per table
-  → Kafka Connect JDBC sinks (upsert on id) → PostgreSQL endowment:5433/endowment_db, schema tapo
-```
+
+Every 15 minutes a systemd timer starts one run of `tapo-watcher`:
+
+1. Read the plug list from `tapo.plug` in PostgreSQL. If PostgreSQL is down,
+   use the cached `state/plugs.json`.
+2. Poll every plug concurrently over the LAN (tapo library). Each plug's own
+   history (hourly energy, 5-minute power) is read back to that plug's last
+   successful run.
+3. **Always** write the run to `buffer/<topic>.<utc-ts>` (JSON Lines).
+4. If Kafka and the schema registry are up, send every pending file
+   oldest-first as Confluent Avro, gzipping each on success. If they're down,
+   exit 0 and let the next run catch up.
+5. Restart any Kafka Connect JDBC sink that has gone FAILED. The sinks upsert
+   on a deterministic id, so re-sent rows never duplicate.
+
+Grafana reads the tables directly (see [Dashboard](#dashboard)).
 
 Structure and the outbox are lifted from
 [linksys-velop-watcher](../linksys-velop-watcher).
@@ -116,17 +153,28 @@ no `plug_location` show as `unset`) and four rows:
 
 - **Now**: power per plug, energy today, energy in the selected range, and
   minutes since each plug's last good reading (orange after 20, red after 35)
+
+  ![Now row](docs/images/dashboard-now.jpg)
+
 - **Power and energy**: 5-minute power, hourly energy (stacked), and daily
   energy by Europe/Dublin calendar day
+
+  ![Power and energy row](docs/images/dashboard-power-energy.jpg)
+
 - **Whole house**: daily ESB meter reads for the last 30 days, stacked so each
   bar is the whole house. The Tesla charger, dishwasher and each plug are
   broken out. Each plug is subtracted from the meter its `plug_location` names
   (`BOTTOM` or `TOP`), and plugs with no location aren't subtracted. This row
   ignores the pickers and only shows days that have Tesla and dishwasher data
   (ESB data arrives a day or two late).
+
+  ![Whole house row](docs/images/dashboard-whole-house.jpg)
+
 - **Health**: latest status per plug (status, RSSI, firmware, last error),
   Wi-Fi signal over time with the unreliable zone below −80 dBm shaded, and
   failed polls per hour
+
+  ![Health row](docs/images/dashboard-health.jpg)
 
 Series colours are fixed in `build_dashboard.py` (`HOUSE_COLOURS`,
 `PLUG_COLOURS`). Add a new plug there, or it gets an automatic colour that may
