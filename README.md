@@ -111,37 +111,38 @@ Other commands: `tapo-drain` (just flush the outbox), `pytest`,
 
 ## Deploying to the Pi
 
-The watcher runs on `pi@longstreet`, in `~/tapo-smart-plugs-to-postgres`. The
-code goes there as a **git bundle over SSH, not through GitHub**: the Pi's clone
-has `origin` pointing at the file `~/tapo.bundle` and tracks its `main`.
+The watcher is meant to run on a Raspberry Pi (or any Debian-like host with
+Python ≥ 3.11) on the same LAN as the plugs. The examples below use
+`PI=pi@raspberrypi.local`; substitute your own SSH login and host.
 
-**Update** (from this repo, on `main`):
+**First install.** Write the secrets file *before* running the installer,
+which enables the timer immediately. If the file still held the template's
+placeholder login, the first run would try a bad password against every plug,
+and plugs lock after repeated failed logins.
 
 ```bash
-git bundle create /tmp/tapo.bundle main
-scp /tmp/tapo.bundle pi@longstreet:tapo.bundle
-ssh pi@longstreet 'cd ~/tapo-smart-plugs-to-postgres && git pull && sudo ./systemd/install-service.sh'
+ssh $PI 'git clone https://github.com/srmadscience/tapo-smart-plugs-to-postgres ~/tapo-smart-plugs-to-postgres'
+# /etc/tapo-watcher/tapo-watcher.env (root, chmod 600): TAPO_USERNAME,
+# TAPO_PASSWORD, TAPO_PG_DSN -- see systemd/tapo-watcher.env.example
+ssh $PI 'cd ~/tapo-smart-plugs-to-postgres && sudo ./systemd/install-service.sh'
+```
+
+**Update:**
+
+```bash
+ssh $PI 'cd ~/tapo-smart-plugs-to-postgres && git pull && sudo ./systemd/install-service.sh'
 ```
 
 The installer is idempotent. It reinstalls the package, re-renders the
 systemd units and leaves the secrets file alone. Skip it when only docs or
 `grafana/` changed.
 
-**First install** on a fresh Pi. Write the secrets file *before* running the
-installer, which enables the timer immediately. If the file still held the
-template's placeholder login, the first run would try a bad password against
-every plug, and plugs lock after repeated failed logins.
+If the Pi can't reach GitHub, ship the code as a git bundle over SSH instead:
+`git bundle create /tmp/tapo.bundle main && scp /tmp/tapo.bundle $PI:tapo.bundle`,
+then clone from (or `git pull` from) `~/tapo.bundle` on the Pi.
 
-```bash
-git bundle create /tmp/tapo.bundle main && scp /tmp/tapo.bundle pi@longstreet:tapo.bundle
-ssh pi@longstreet 'git clone -b main ~/tapo.bundle ~/tapo-smart-plugs-to-postgres'
-# /etc/tapo-watcher/tapo-watcher.env (root, chmod 600): TAPO_USERNAME,
-# TAPO_PASSWORD, TAPO_PG_DSN -- see systemd/tapo-watcher.env.example
-ssh pi@longstreet 'cd ~/tapo-smart-plugs-to-postgres && sudo ./systemd/install-service.sh'
-```
-
-Check it with `ssh pi@longstreet journalctl -u tapo-watcher -f`. The Pi keeps its
-own `state/` (last success per plug, cached plug list) and `buffer/` (outbox);
+Check it with `ssh $PI journalctl -u tapo-watcher -f`. The Pi keeps its own
+`state/` (last success per plug, cached plug list) and `buffer/` (outbox);
 both are gitignored.
 
 ## Dashboard
