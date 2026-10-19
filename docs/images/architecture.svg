@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1250 450" width="1250" height="450" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>tapo-smart-plugs-to-postgres architecture</title>
+  <style>
+    svg { --bg:#ffffff; --box:#f6f8fa; --line:#57606a; --text:#1f2328; --muted:#59636e; --flow:#0969da; --ctl:#8250df; --group:#ddf4ff; --groupline:#54aeff; }
+    @media (prefers-color-scheme: dark) {
+      svg { --bg:#0d1117; --box:#161b22; --line:#8b949e; --text:#e6edf3; --muted:#9198a1; --flow:#4493f8; --ctl:#ab7df8; --group:#0c2d6b; --groupline:#1f6feb; }
+    }
+    .bg { fill: var(--bg); }
+    .box { fill: var(--box); stroke: var(--line); stroke-width: 1.5; }
+    .group { fill: var(--group); fill-opacity: .45; stroke: var(--groupline); stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .title { fill: var(--text); font-size: 15px; font-weight: 600; text-anchor: middle; }
+    .sub { fill: var(--muted); font-size: 12px; text-anchor: middle; }
+    .glabel { fill: var(--text); font-size: 13px; font-weight: 600; }
+    .flow { stroke: var(--flow); stroke-width: 2.5; fill: none; }
+    .ctl { stroke: var(--ctl); stroke-width: 2; fill: none; stroke-dasharray: 7 5; }
+    .elabel { fill: var(--muted); font-size: 12px; }
+    .badge { stroke: none; }
+    .badge-flow { fill: var(--flow); }
+    .badge-ctl { fill: var(--ctl); }
+    .bnum { fill: #ffffff; font-size: 12px; font-weight: 700; text-anchor: middle; }
+    .ahf { fill: var(--flow); }
+    .ahc { fill: var(--ctl); }
+    .ahl { fill: var(--line); }
+  </style>
+  <defs>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahf" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="ac" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahc" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="al" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahl" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1250" height="450"/>
+
+  <!-- Raspberry Pi group -->
+  <rect class="group" x="180" y="115" width="342" height="265" rx="12"/>
+  <text class="glabel" x="196" y="138">Raspberry Pi</text>
+
+  <!-- Main row: boxes 130 wide, 50 apart, y 170..250 -->
+  <rect class="box" x="20" y="170" width="130" height="80" rx="8"/>
+  <text class="title" x="85" y="203">Tapo plugs</text>
+  <text class="sub" x="85" y="222">P110 / P110M</text>
+  <text class="sub" x="85" y="238">on the LAN</text>
+
+  <rect class="box" x="200" y="170" width="130" height="80" rx="8"/>
+  <text class="title" x="265" y="203">tapo-watcher</text>
+  <text class="sub" x="265" y="222">systemd timer,</text>
+  <text class="sub" x="265" y="238">every 15 min</text>
+
+  <!-- buffer/ (store) -->
+  <path class="box" d="M380,180 A65,10 0 0 1 510,180 V240 A65,10 0 0 1 380,240 Z"/>
+  <path class="box" d="M380,180 A65,10 0 0 0 510,180" fill="none"/>
+  <text class="title" x="445" y="211">buffer/</text>
+  <text class="sub" x="445" y="228">file outbox</text>
+
+  <rect class="box" x="560" y="170" width="130" height="80" rx="8"/>
+  <text class="title" x="625" y="203">Kafka</text>
+  <text class="sub" x="625" y="222">4 topics, Avro</text>
+  <text class="sub" x="625" y="238">+ schema registry</text>
+
+  <rect class="box" x="740" y="170" width="130" height="80" rx="8"/>
+  <text class="title" x="805" y="203">Kafka Connect</text>
+  <text class="sub" x="805" y="222">4 JDBC sinks</text>
+  <text class="sub" x="805" y="238">upsert on id</text>
+
+  <!-- PostgreSQL (store) -->
+  <path class="box" d="M920,180 A65,10 0 0 1 1050,180 V240 A65,10 0 0 1 920,240 Z"/>
+  <path class="box" d="M920,180 A65,10 0 0 0 1050,180" fill="none"/>
+  <text class="title" x="985" y="211">PostgreSQL</text>
+  <text class="sub" x="985" y="228">schema tapo</text>
+
+  <rect class="box" x="1100" y="170" width="130" height="80" rx="8"/>
+  <text class="title" x="1165" y="211">Grafana</text>
+  <text class="sub" x="1165" y="228">dashboard</text>
+
+  <!-- state/ (store) below the watcher -->
+  <path class="box" d="M195,300 A50,8 0 0 1 295,300 V358 A50,8 0 0 1 195,358 Z"/>
+  <path class="box" d="M195,300 A50,8 0 0 0 295,300" fill="none"/>
+  <text class="title" x="245" y="326" style="font-size:13px">state/</text>
+  <text class="sub" x="245" y="342">last success,</text>
+  <text class="sub" x="245" y="356">plug-list cache</text>
+  <line x1="245" y1="252" x2="245" y2="290" stroke="var(--line)" stroke-width="1.5" marker-start="url(#al)" marker-end="url(#al)"/>
+
+  <!-- Data flow, left to right -->
+  <line class="flow" x1="150" y1="210" x2="197" y2="210" marker-end="url(#af)"/>
+  <line class="flow" x1="330" y1="210" x2="377" y2="210" marker-end="url(#af)"/>
+  <line class="flow" x1="510" y1="210" x2="557" y2="210" marker-end="url(#af)"/>
+  <line class="flow" x1="690" y1="210" x2="737" y2="210" marker-end="url(#af)"/>
+  <line class="flow" x1="870" y1="210" x2="917" y2="210" marker-end="url(#af)"/>
+  <line class="flow" x1="1050" y1="210" x2="1097" y2="210" marker-end="url(#af)"/>
+
+  <g class="badge">
+    <circle class="badge-flow" cx="175" cy="185" r="11"/><text class="bnum" x="175" y="189">2</text>
+    <circle class="badge-flow" cx="355" cy="185" r="11"/><text class="bnum" x="355" y="189">3</text>
+    <circle class="badge-flow" cx="535" cy="185" r="11"/><text class="bnum" x="535" y="189">4</text>
+  </g>
+
+  <!-- 1: plug list, PostgreSQL to watcher, along the bottom -->
+  <path class="ctl" d="M985,250 V405 H315 V253" marker-end="url(#ac)"/>
+  <circle class="badge-ctl" cx="620" cy="405" r="11"/><text class="bnum" x="620" y="409">1</text>
+  <text class="elabel" x="620" y="433" text-anchor="middle">plug list (tapo.plug), read directly</text>
+
+  <!-- 5: restart FAILED sinks, watcher to Connect, along the top -->
+  <path class="ctl" d="M265,170 V70 H805 V167" marker-end="url(#ac)"/>
+  <circle class="badge-ctl" cx="535" cy="70" r="11"/><text class="bnum" x="535" y="74">5</text>
+  <text class="elabel" x="535" y="50" text-anchor="middle">restart FAILED sinks (Connect REST API)</text>
+</svg>

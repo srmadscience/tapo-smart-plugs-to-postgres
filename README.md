@@ -6,36 +6,7 @@ Kafka Connect, so that an outage of Kafka or PostgreSQL loses nothing.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    plugs["Tapo P110 / P110M plugs<br/>(LAN, KLAP / TPAP)"]
-
-    subgraph pi["Raspberry Pi"]
-        timer["systemd timer<br/>:00 :15 :30 :45"]
-        watcher["tapo-watcher<br/>(oneshot)"]
-        state[("state/<br/>last success per plug,<br/>cached plug list")]
-        buffer[("buffer/<br/>file outbox,<br/>JSON Lines")]
-        timer --> watcher
-        watcher <--> state
-        watcher -- "3. write every run" --> buffer
-    end
-
-    subgraph kafka["Kafka"]
-        registry["Schema Registry<br/>(Avro)"]
-        topics["4 topics<br/>tapo.device · tapo.reading<br/>tapo.energy_hourly · tapo.power_5min"]
-    end
-
-    connect["Kafka Connect<br/>4 JDBC sinks<br/>(upsert on id)"]
-    pg[("PostgreSQL<br/>schema tapo")]
-    grafana["Grafana<br/>dashboard"]
-
-    pg -- "1. plug list (tapo.plug)" --> watcher
-    watcher -- "2. poll concurrently,<br/>backfill from plug history" --> plugs
-    buffer -- "4. drain oldest-first<br/>when Kafka is up" --> topics
-    watcher -. "register schemas" .-> registry
-    watcher -. "5. restart FAILED sinks<br/>(Connect REST)" .-> connect
-    topics --> connect --> pg --> grafana
-```
+![Architecture: plugs, tapo-watcher and its file outbox on a Raspberry Pi, Kafka, Kafka Connect, PostgreSQL, Grafana](docs/images/architecture.svg)
 
 Every 15 minutes a systemd timer starts one run of `tapo-watcher`:
 
