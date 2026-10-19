@@ -92,7 +92,7 @@ class KafkaSink:
 
     def kafka_up(self, timeout: float = 5.0) -> bool:
         """Best-effort check that both the broker AND the registry are reachable
-        (serializing needs the registry; both live on badger)."""
+        (serializing needs the registry; both normally live on the Kafka host)."""
         from confluent_kafka import KafkaException
 
         try:

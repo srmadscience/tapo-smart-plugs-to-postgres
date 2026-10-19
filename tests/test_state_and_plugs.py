@@ -97,7 +97,7 @@ def test_poll_all_updates_state(tmp_path, monkeypatch):
 
 # --- plug list --------------------------------------------------------------
 
-PLUGS = [{"plug_name": "kettle", "ip": "10.13.1.230"}]
+PLUGS = [{"plug_name": "kettle", "ip": "192.168.1.230"}]
 
 
 def test_load_plugs_from_postgres_writes_cache(tmp_path):

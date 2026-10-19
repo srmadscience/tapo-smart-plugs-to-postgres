@@ -9,7 +9,7 @@
 CREATE SCHEMA IF NOT EXISTS tapo;
 
 -- The plug list that drives the watcher. Maintained by hand; NOT fed by Kafka.
---   INSERT INTO tapo.plug (plug_name, ip) VALUES ('kettle', '10.13.1.230');
+--   INSERT INTO tapo.plug (plug_name, ip) VALUES ('kettle', '192.168.1.230');
 CREATE TABLE IF NOT EXISTS tapo.plug (
     plug_name  TEXT PRIMARY KEY,
     ip         TEXT NOT NULL UNIQUE,

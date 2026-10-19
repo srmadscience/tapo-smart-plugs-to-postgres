@@ -160,7 +160,7 @@ for p in panels:
         p["fieldConfig"]["overrides"] += colours(PLUG_COLOURS)
 
 dash = {
-    "__inputs": [{"name": "DS_TAPO_POSTGRES", "label": "PostgreSQL (endowment_db)",
+    "__inputs": [{"name": "DS_TAPO_POSTGRES", "label": "PostgreSQL",
                   "description": "PostgreSQL holding the tapo.* tables",
                   "type": "datasource", "pluginId": "grafana-postgresql-datasource",
                   "pluginName": "PostgreSQL"}],

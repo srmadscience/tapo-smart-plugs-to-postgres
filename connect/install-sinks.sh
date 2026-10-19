@@ -9,6 +9,8 @@
 # placeholders, and this script substitutes the environment variable of the same
 # name, failing loudly if it is unset:
 #   CHANGEME_PG_USER    / CHANGEME_PG_PASSWORD     <- $PG_USER    / $PG_PASSWORD
+#   CHANGEME_PG_JDBC_URL                           <- $PG_JDBC_URL (jdbc:postgresql://host:port/db)
+#   CHANGEME_SCHEMA_REGISTRY_URL                   <- $SCHEMA_REGISTRY_URL
 #
 # Prereqs (see connect/README.md):
 #   1. The tapo.* tables already exist — apply
@@ -17,12 +19,13 @@
 #      the sinks start consuming.
 #
 # Usage:
-#   PG_USER=scott PG_PASSWORD=... ./connect/install-sinks.sh
+#   PG_USER=scott PG_PASSWORD=... PG_JDBC_URL=jdbc:postgresql://postgres:5432/tapo_db \
+#     SCHEMA_REGISTRY_URL=http://kafka:8081 ./connect/install-sinks.sh
 #   CONNECT_URL=http://my-connect:8083 ./connect/install-sinks.sh
 #
 set -euo pipefail
 
-CONNECT_URL="${CONNECT_URL:-http://badger:8083}"
+CONNECT_URL="${CONNECT_URL:-http://kafka:8083}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${HERE}/sink-files.sh"
 

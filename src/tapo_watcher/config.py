@@ -32,15 +32,15 @@ class Config:
 
     # Kafka / Avro (Confluent wire format) -- the only data sink. One topic per
     # table, "<prefix><table>". Connect JDBC sinks land them in PostgreSQL.
-    kafka_bootstrap: str = "badger:9092"
-    schema_registry_url: str = "http://badger:8081"
+    kafka_bootstrap: str = "kafka:9092"
+    schema_registry_url: str = "http://kafka:8081"
     kafka_topic_prefix: str = "tapo."
     kafka_client_id: str = "tapo-watcher"
     kafka_probe_timeout: float = 5.0
     # Kafka Connect REST API. Each run restarts any FAILED tapo sink (see
     # sinks.py) -- the JDBC sink dies on a PostgreSQL outage > ~2.5 min and
     # never recovers on its own. Empty disables the check.
-    connect_url: str = "http://badger:8083"
+    connect_url: str = "http://kafka:8083"
 
     # Every run's messages are written to buffer_dir FIRST (one file per topic,
     # "<topic>.<yyyymmdd_HHMMSS>"), then drained to Kafka if it is up. Sent files

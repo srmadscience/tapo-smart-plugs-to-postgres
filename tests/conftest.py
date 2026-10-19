@@ -19,14 +19,14 @@ def ok_result():
     """
     return {
         "plug_name": "kettle",
-        "ip": "10.13.1.230",
+        "ip": "192.168.1.230",
         "status": "ok",
         "error": None,
         "history_ok": True,
         "device_info": {
             "device_id": "9ae579e8cb14f84066d583d99c5c4db9",
             "mac": "18-69-45-C1-65-39",
-            "ip": "10.13.1.230",
+            "ip": "192.168.1.230",
             "model": "P110M",
             "type": "SMART.TAPOPLUG",
             "hw_ver": "1.0", "fw_ver": "1.2.3 Build 240101",

@@ -54,7 +54,7 @@ def test_history_rows_skip_empty_slots_and_use_deterministic_ids(ok_result):
 
 
 def test_failed_poll_still_yields_a_reading_row():
-    result = {"plug_name": "kettle", "ip": "10.13.1.230",
+    result = {"plug_name": "kettle", "ip": "192.168.1.230",
               "status": "error", "error": "timed out after 60s"}
     rows = build_rows(result, FETCHED_AT)
     assert rows["device"] == []

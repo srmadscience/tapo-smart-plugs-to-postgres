@@ -91,16 +91,16 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"   # Python >= 3.11
 cp .env.example .env    # fill in; then:
 set -a; source .env; set +a
 
-tapo-discover 10.13.1.255                       # find plugs (no login needed)
-tapo-discover 10.13.1.230 --dump spike_output   # log in once, dump every API call
+tapo-discover 192.168.1.255                       # find plugs (no login needed)
+tapo-discover 192.168.1.230 --dump spike_output   # log in once, dump every API call
 
 psql "$TAPO_PG_DSN" -f sql/tapo_schema_postgres.sql
 # plug_location: BOTTOM or TOP (uppercase) -- which ESB meter the plug is on.
 # Leaving it NULL double-counts the plug in the dashboard's whole-house row.
-psql "$TAPO_PG_DSN" -c "INSERT INTO tapo.plug (plug_name, ip, plug_location) VALUES ('kettle', '10.13.1.230', 'TOP')"
+psql "$TAPO_PG_DSN" -c "INSERT INTO tapo.plug (plug_name, ip, plug_location) VALUES ('kettle', '192.168.1.230', 'TOP')"
 
 tapo-watcher                    # one run; registers the Avro schemas
-./connect/install-sinks.sh      # needs PG_USER / PG_PASSWORD, curl, jq
+./connect/install-sinks.sh      # needs PG_USER, PG_PASSWORD, PG_JDBC_URL, SCHEMA_REGISTRY_URL, curl, jq
 ./connect/status-sinks.sh
 
 sudo ./systemd/install-service.sh   # on the Pi: venv + 15-min timer
@@ -148,7 +148,7 @@ both are gitignored.
 ## Dashboard
 
 Import [`grafana/tapo.json`](grafana/tapo.json) (Dashboards → New → Import) and
-pick the PostgreSQL data source that holds `endowment_db`. It has
+pick the PostgreSQL data source that holds the `tapo` schema. It has
 **Location** and **Plug** pickers (Location narrows the plug list; plugs with
 no `plug_location` show as `unset`) and four rows:
 

@@ -9,7 +9,7 @@
 #
 set -euo pipefail
 
-CONNECT_URL="${CONNECT_URL:-http://badger:8083}"
+CONNECT_URL="${CONNECT_URL:-http://kafka:8083}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${HERE}/sink-files.sh"
 

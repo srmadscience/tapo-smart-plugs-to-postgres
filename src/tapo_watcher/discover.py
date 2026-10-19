@@ -1,8 +1,8 @@
 """``tapo-discover``: inspect plugs, to seed ``tapo.plug`` and capture fixtures.
 
-    tapo-discover 10.13.1.230              # unauthenticated discovery only
-    tapo-discover 10.13.1.255              # broadcast: find every plug on the LAN
-    tapo-discover 10.13.1.230 --dump DIR   # + log in and dump every read call
+    tapo-discover 192.168.1.230              # unauthenticated discovery only
+    tapo-discover 192.168.1.255              # broadcast: find every plug on the LAN
+    tapo-discover 192.168.1.230 --dump DIR   # + log in and dump every read call
 
 Discovery needs no credentials and prints model, MAC and login protocol
 (KLAP/TPAP). ``--dump`` logs in ONCE per plug (no retry -- plugs lock on
